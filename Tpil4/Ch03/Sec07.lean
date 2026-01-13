@@ -23,7 +23,7 @@ theorem math_style : ({p : Prop} → p ∨ ¬p) ↔ ({p : Prop} → ¬¬p → p)
   have hiinnppopnp : ({p : Prop} → ¬¬p → p) → {p : Prop} → p ∨ ¬p :=
     fun hdne =>
       hdne (fun hnopnp =>
-        (hnopnp ∘ Or.inr) (hnopnp ∘ Or.inl))
+        (fun hnp => hnopnp (Or.inr hnp)) (fun hp => hnopnp (Or.inl hp)))
   Iff.intro hiopnpinnpp hiinnppopnp
 
 end ex00
@@ -250,10 +250,35 @@ end ex07
 namespace ex08
 
 def fp_style : {p q r : Prop} → ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) :=
-  sorry
+  Iff.intro
+    (fun hiopqr =>
+      And.intro
+        (hiopqr ∘ Or.inl)
+        (hiopqr ∘ Or.inr))
+    (fun
+    | And.intro hipr _, Or.inl hp => hipr hp
+    | And.intro _ hiqr, Or.inr hq => hiqr hq)
 
 theorem math_style {p q r : Prop} : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) :=
-  sorry
+  have hiiopqraipriqr : ((p ∨ q) → r) → (p → r) ∧ (q → r) :=
+    fun hiopqr =>
+      And.intro
+        (fun hp =>
+          hiopqr (Or.inl hp))
+        (fun hq =>
+          hiopqr (Or.inr hq))
+  have hiaipriqriopqr : (p → r) ∧ (q → r) → (p ∨ q) → r :=
+    fun haipriqr hopq =>
+      Or.elim hopq
+        (fun hp =>
+          have hipr : p → r :=
+            And.left haipriqr
+          hipr hp)
+        (fun hq =>
+          have hiqr : q → r :=
+            And.right haipriqr
+          hiqr hq)
+  Iff.intro hiiopqraipriqr hiaipriqriopqr
 
 end ex08
 
@@ -492,9 +517,16 @@ end ex24
 namespace ex25
 
 def fp_style : {p q : Prop} → ((p → q) → p) → p :=
-  sorry
+  match Classical.em _ with
+  | Or.inl hp => fun _ => hp
+  | Or.inr hnp => fun hiipqp => hiipqp (fun hp => nomatch hnp hp)
 
 theorem math_style {p q : Prop} : ((p → q) → p) → p :=
-  sorry
+  Or.elim (Classical.em _)
+    (fun hp => fun _ => hp)
+    (fun hnp => fun hiipqp =>
+      have hipq : p → q :=
+        fun hp => False.elim (hnp hp)
+      hiipqp hipq)
 
 end ex25
