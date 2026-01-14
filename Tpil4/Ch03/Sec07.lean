@@ -287,10 +287,29 @@ end ex08
 namespace ex09
 
 def fp_style : {p q : Prop} → ¬(p ∨ q) ↔ ¬p ∧ ¬q :=
-  sorry
+  Iff.intro
+    (fun hnopq => And.intro
+      (hnopq ∘ Or.inl)
+      (hnopq ∘ Or.inr))
+    (fun (And.intro hnp hnq) => fun
+      | Or.inl hp => hnp hp
+      | Or.inr hq => hnq hq)
 
 theorem math_style {p q : Prop} : ¬(p ∨ q) ↔ ¬p ∧ ¬q :=
-  sorry
+  have hinopqanpnq : ¬(p ∨ q) → ¬p ∧ ¬q :=
+    fun hnopq => And.intro
+      (fun hp => hnopq (Or.inl hp))
+      (fun hq => hnopq (Or.inr hq))
+  have hianpnqnopq : ¬p ∧ ¬q → ¬(p ∨ q) :=
+    fun hanpnq hopq =>
+      have hnp : ¬p :=
+        And.left hanpnq
+      have hnq : ¬q :=
+        And.right hanpnq
+      Or.elim hopq
+        (fun hp => hnp hp)
+        (fun hq => hnq hq)
+  Iff.intro hinopqanpnq hianpnqnopq
 
 end ex09
 
@@ -299,10 +318,20 @@ end ex09
 namespace ex10
 
 def fp_style : {p q : Prop} → ¬p ∨ ¬q → ¬(p ∧ q) :=
-  sorry
+  fun
+  | (Or.inl hnp), (And.intro hp _) => hnp hp
+  | (Or.inr hnq), (And.intro _ hq) => hnq hq
 
 theorem math_style {p q : Prop} : ¬p ∨ ¬q → ¬(p ∧ q) :=
-  sorry
+  fun honpnq hapq => Or.elim honpnq
+    (fun hnp =>
+      have hp : p :=
+        And.left hapq
+      hnp hp)
+    (fun hnq =>
+      have hq : q :=
+        And.right hapq
+      hnq hq)
 
 end ex10
 
@@ -329,10 +358,16 @@ end ex11
 namespace ex12
 
 def fp_style : {p q : Prop} → p ∧ ¬q → ¬(p → q) :=
-  sorry
+  fun (And.intro hp hnq) hipq =>
+    hnq (hipq hp)
 
 theorem math_style {p q : Prop} : p ∧ ¬q → ¬(p → q) :=
-  sorry
+  fun hapnq hipq =>
+    have hp : p :=
+      And.left hapnq
+    have hnq : ¬q :=
+      And.right hapnq
+    hnq (hipq hp)
 
 end ex12
 
@@ -357,10 +392,14 @@ end ex13
 namespace ex14
 
 def fp_style : {p q : Prop} → (¬p ∨ q) → p → q :=
-  sorry
+  fun
+  | (Or.inl hnp), hp => nomatch hnp hp
+  | (Or.inr hq), _ => hq
 
 theorem math_style {p q : Prop} : (¬p ∨ q) → p → q :=
-  sorry
+  fun honpq hp => Or.elim honpq
+    (fun hnp => False.elim (hnp hp))
+    (fun hq => hq)
 
 end ex14
 
@@ -445,10 +484,34 @@ end ex18
 namespace ex19
 
 def fp_style : {p q r : Prop} → (p → q ∨ r) → (p → q) ∨ (p → r) :=
-  sorry
+  match Classical.em _ with
+  | Or.inl hp =>
+      fun hipoqr => match hipoqr hp with
+      | Or.inl hq => Or.inl (fun _ => hq)
+      | Or.inr hr => Or.inr (fun _ => hr)
+  | Or.inr hnp => fun _ =>
+      Or.inl (fun hp => nomatch hnp hp)
 
 theorem math_style {p q r : Prop} : (p → q ∨ r) → (p → q) ∨ (p → r) :=
-  sorry
+  have hopnp : p ∨ ¬p :=
+    Classical.em _
+  Or.elim hopnp
+    (fun hp => fun hipoqr =>
+      have hoqr : q ∨ r :=
+        hipoqr hp
+      Or.elim hoqr
+        (fun hq =>
+          have hipq : p → q :=
+            fun _ => hq
+          Or.inl hipq)
+        (fun hr =>
+          have hipr : p → r :=
+            fun _ => hr
+          Or.inr hipr))
+    (fun hnp => fun _ =>
+      have hipq : p → q :=
+        fun hp => False.elim (hnp hp)
+      Or.inl hipq)
 
 end ex19
 
@@ -457,10 +520,24 @@ end ex19
 namespace ex20
 
 def fp_style : {p q : Prop} → ¬(p ∧ q) → ¬p ∨ ¬q :=
-  sorry
+  match Classical.em _ with
+  | Or.inl hp => fun hnaqp =>
+      Or.inr (fun hq =>
+        hnaqp (And.intro hp hq))
+  | Or.inr hnp => fun _ => Or.inl hnp
 
 theorem math_style {p q : Prop} : ¬(p ∧ q) → ¬p ∨ ¬q :=
-  sorry
+  have hopnp : p ∨ ¬p :=
+    Classical.em _
+  Or.elim hopnp
+    (fun hp => fun hnapq =>
+      have hnq : ¬q :=
+        fun hq =>
+          have hapq : p ∧ q :=
+            And.intro hp hq
+          hnapq hapq
+      Or.inr hnq)
+    (fun hnp => fun _ => Or.inl hnp)
 
 end ex20
 
@@ -469,10 +546,26 @@ end ex20
 namespace ex21
 
 def fp_style : {p q : Prop} → ¬(p → q) → p ∧ ¬q :=
-  sorry
+  fun hnipq => And.intro
+    (Classical.byContradiction (fun hnp =>
+      nomatch hnipq (fun hp => nomatch hnp hp)))
+    (fun hq => nomatch hnipq (fun _ => hq))
 
 theorem math_style {p q : Prop} : ¬(p → q) → p ∧ ¬q :=
-  sorry
+  fun hnipq =>
+    have hnnp : ¬¬p :=
+      fun hnp =>
+        have hipq : p → q :=
+          fun hp => False.elim (hnp hp)
+        False.elim (hnipq hipq)
+    have hp : p :=
+      Classical.byContradiction hnnp
+    have hnq : ¬q :=
+      fun hq =>
+        have hipq : p → q :=
+          fun _ => hq
+        False.elim (hnipq hipq)
+    And.intro hp hnq
 
 end ex21
 
@@ -480,11 +573,21 @@ end ex21
 /- Classical Exercise 22 -/
 namespace ex22
 
-def fp_style : {p q : Prop} → (p → q) → (¬p ∨ q) :=
-  sorry
+def fp_style : {p q : Prop} → (p → q) → ¬p ∨ q :=
+  match Classical.em _ with
+  | Or.inl hp => fun hipq => Or.inr (hipq hp)
+  | Or.inr hnp => fun _ => Or.inl hnp
 
-theorem math_style {p q : Prop} : (p → q) → (¬p ∨ q) :=
-  sorry
+
+theorem math_style {p q : Prop} : (p → q) → ¬p ∨ q :=
+  have hopnp : p ∨ ¬p :=
+    Classical.em _
+  Or.elim hopnp
+    (fun hp => fun hipq =>
+      have hq : q :=
+        hipq hp
+      Or.inr hq)
+    (fun hnp => fun _ => Or.inl hnp)
 
 end ex22
 
@@ -493,10 +596,18 @@ end ex22
 namespace ex23
 
 def fp_style : {p q : Prop} → (¬q → ¬p) → p → q :=
-  sorry
+  fun hinqnp hp =>
+    Classical.byContradiction (fun hnq =>
+      (hinqnp hnq) hp)
 
 theorem math_style {p q : Prop} : (¬q → ¬p) → p → q :=
-  sorry
+  fun hinqnp hp =>
+    have hnnq : ¬¬q :=
+      fun hnq =>
+        have hnp : ¬p :=
+          hinqnp hnq
+        hnp hp
+    Classical.byContradiction hnnq
 
 end ex23
 
