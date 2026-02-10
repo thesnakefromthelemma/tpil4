@@ -1,3 +1,6 @@
+namespace Ch03.Sec07
+
+
 /- Constructive equivalence
   of principle of excluded middle
   and double negation elimination
@@ -443,6 +446,8 @@ theorem math_style {p : Prop} : p ∧ False ↔ False :=
     False.elim
   Iff.intro hiapff hifapf
 
+end ex16
+
 
 /- Constructive Exercise 17 -/
 namespace ex17
@@ -641,3 +646,6 @@ theorem math_style {p q : Prop} : ((p → q) → p) → p :=
       hiipqp hipq)
 
 end ex25
+
+
+end Ch03.Sec07

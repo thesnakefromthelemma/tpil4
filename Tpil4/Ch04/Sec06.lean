@@ -1,3 +1,9 @@
+import Tpil4.Ch04.Op
+
+
+namespace Ch04.Sec06
+
+
 /- Constructive -/
 namespace ex01
 
@@ -279,6 +285,16 @@ end ex19
 
 namespace ex20
 
+def Vec : Sort u → Nat → Sort u :=
+  fun α n => (n' : Nat) → (n' < n) → α
+
+def fold : {α : Sort u} →
+  α → (α → α → α) → (n : Nat) → Vec α n -> α
+:=
+  fun
+  | b, _, Nat.zero, _ => b
+  | b, g, Nat.succ n', vec => g (sorry) (sorry)
+
 def prime : Nat → Prop :=
   sorry
 
@@ -331,3 +347,6 @@ def Fermat's_last_theorem : Prop :=
   sorry
 
 end ex26
+
+
+end Ch04.Sec06
